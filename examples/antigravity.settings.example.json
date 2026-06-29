@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "taste-mcp": {
+      "command": "node",
+      "args": ["/path/to/taste-mcp/dist/index.js"]
+    }
+  }
+}

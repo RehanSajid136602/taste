@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*
+.repair-mcp/*.jsonl
+.repair-mcp/*.json
+.repair-mcp/*.md
+*.log
+!dist/.gitkeep

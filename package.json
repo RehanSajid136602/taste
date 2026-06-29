@@ -1,0 +1,42 @@
+{
+  "name": "taste-mcp",
+  "version": "1.0.0",
+  "description": "A deterministic Tool Taste Harness for AI coding agents.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "taste-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "taste:report": "node dist/taste-profiler.js",
+    "test:taste": "bash test-taste.sh",
+    "check": "pnpm build && pnpm test:taste && pnpm taste:report"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  },
+  "author": "Rehan Sajid",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RehanSajid136602/taste"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "taste-harness",
+    "ai-agents",
+    "tool-repair",
+    "opencode",
+    "codex-cli",
+    "antigravity-cli"
+  ]
+}

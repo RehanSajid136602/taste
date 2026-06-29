@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "taste-mcp": {
+      "type": "local",
+      "command": [
+        "node",
+        "/path/to/taste-mcp/dist/index.js"
+      ]
+    }
+  },
+  "instructions": [
+    "/path/to/examples/agent-instructions.md"
+  ]
+}
