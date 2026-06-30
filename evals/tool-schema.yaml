@@ -1,0 +1,14 @@
+description: Taste MCP tool-schema repair evals
+prompts:
+  - "Call repair_shell with commandText instead of command, then follow the repair notice on the next call."
+providers:
+  - id: echo
+    config:
+      response: "Use repair_shell with { command: string, cwd?: string, timeout?: number }."
+tests:
+  - vars: {}
+    assert:
+      - type: contains
+        value: "repair_shell"
+      - type: contains
+        value: "command"

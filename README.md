@@ -30,15 +30,124 @@ Taste MCP does **not** permanently train or fine-tune AI models. Instead, it:
 
 ---
 
+## AI Consistency Harness
+
+Taste MCP is also an AI Consistency Harness for coding agents. It does not permanently train or fine-tune models. It reduces hallucinations at runtime by forcing evidence-backed tool use, deterministic checks, receipts, claim verification, and honest final reporting.
+
+This is useful for open-source and local coding models such as DeepSeek, Qwen, GLM, and other models that may be capable but inconsistent about tool schemas, build status, edited files, and final claims.
+
+## How Taste MCP Reduces Hallucinations
+
+Taste MCP adds a runtime evidence layer around agent work:
+
+- **Session warmup** loads local taste rules, stats, suggestions, reports, project rules, and project maps before work begins.
+- **Project map** gives the agent a structured view of the framework, scripts, routes, components, config files, style files, and env example files.
+- **File guards** block traversal, warn on missing files, require patch targets to exist, and only allow writes when the parent folder exists.
+- **Edit receipts** prove what files changed and record before/after hashes without logging secrets.
+- **Shell receipts** record commands, exit codes, duration, summaries, and blocked status without logging secrets.
+- **Build truth gate** prevents agents from claiming build/lint/typecheck success unless the latest receipt proves it.
+- **Claim verification** checks final-response claims against receipts, file existence, the project map, and build evidence.
+- **Final response gate** produces an honest report of changed files, commands, build status, unverified claims, remaining risks, and receipt counts.
+
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `repair_shell` | Execute shell commands with dangerous-command blocking |
-| `repair_read_file` | Read file contents with optional offset/limit |
-| `repair_write_file` | Write content to a file (creates parent dirs) |
-| `repair_patch_file` | Find-and-replace within a file |
+| `repair_shell` | Execute shell commands with dangerous-command blocking and shell receipts |
+| `repair_read_file` | Read file contents with optional offset/limit and path-safety checks |
+| `repair_write_file` | Write content to a file with path-safety checks and edit receipts |
+| `repair_patch_file` | Find-and-replace within an existing file with edit receipts |
 | `repair_list_files` | Recursive directory listing with filter support |
+| `repair_session_warmup` | Read and summarize local taste/project context without reading `logs.jsonl` |
+| `repair_project_map` | Generate `.repair-mcp/project-map.json` for the current project |
+| `repair_build_gate` | Check whether latest build/lint/typecheck receipt allows a success claim |
+| `repair_verify_claims` | Verify final claims against receipts, project map, and file existence |
+| `repair_final_report_gate` | Generate an evidence-backed final-report summary |
+
+## Claim Verification
+
+Use `repair_verify_claims` before final responses that mention changed files, successful builds, fixed UI issues, or broad completion claims.
+
+```json
+{
+  "claims": [
+    "I updated app/page.tsx",
+    "The build passed",
+    "I fixed all broken icons"
+  ]
+}
+```
+
+Each claim is returned as `verified`, `not_verified`, or `contradicted`, with evidence and safer recommended wording. If a claim is unverified, the final response should say `not verified` instead of pretending.
+
+## Build Truth Gate
+
+The agent may only claim build, lint, or typecheck passed if `repair_build_gate` confirms success from the latest relevant shell receipt.
+
+A build-like command should be run through `repair_shell`, for example:
+
+```bash
+pnpm build
+pnpm lint
+pnpm typecheck
+```
+
+Then call `repair_build_gate`. If it does not return `allowedToClaimBuildPassed: true`, do not claim the build passed.
+
+## Edit Receipts
+
+Every successful `repair_write_file` or `repair_patch_file` appends a receipt to `.repair-mcp/edit-receipts.jsonl` with:
+
+- timestamp
+- tool
+- filePath
+- operation
+- changed true/false
+- beforeHash
+- afterHash
+- summary
+- sanitized args
+
+## Project Map
+
+`repair_project_map` writes `.repair-mcp/project-map.json` with detected framework, package manager, scripts, important folders, routes/pages, components, config files, style files, and env example files. It never records real `.env` values.
+
+## Session Warmup
+
+`repair_session_warmup` reads and summarizes:
+
+- `.repair-mcp/taste-rules.json`
+- `.repair-mcp/taste-stats.json`
+- `.repair-mcp/taste-suggestions.json`
+- `.repair-mcp/taste-report.md` if present
+- `.repair-mcp/project-rules.md` if present
+- `.repair-mcp/project-map.json` if present
+
+It does not read `.repair-mcp/logs.jsonl` by default.
+
+## Recommended Agent Rules
+
+Add these rules to coding-agent instructions:
+
+```txt
+Start each coding session with repair_session_warmup.
+Use repair_project_map when project structure is unknown or stale.
+Use Taste MCP tools instead of raw shell/filesystem tools when available.
+Do not invent files or claim edits without edit receipts.
+Do not claim build/lint/typecheck passed without repair_build_gate.
+Run repair_verify_claims before final responses with concrete claims.
+Use repair_final_report_gate for honest final reports.
+If a claim is not verified, say "not verified".
+```
+
+## Comparison With Other Guardrail Tools
+
+| Tool | Primary Use | How Taste MCP Differs |
+|------|-------------|-----------------------|
+| promptfoo | Prompt and model evaluation suites | Taste MCP runs inside the coding session and creates receipts for real tool use |
+| DeepEval | LLM evaluation metrics and test cases | Taste MCP focuses on deterministic runtime evidence, file edits, shell results, and final claims |
+| Guardrails AI | Structured output validation and policy checks | Taste MCP guards tool calls, project context, file paths, build claims, and receipts |
+| NeMo Guardrails | Conversational rails and policy flows | Taste MCP is narrower and operational: it verifies coding-agent actions against local artifacts |
 
 ## How Repair Notices Work
 
@@ -90,6 +199,10 @@ All data lives under `.repair-mcp/` in the server's working directory:
 | `taste-stats.json` | Counts of tool calls, repairs, bad keys |
 | `taste-suggestions.json` | Suggested aliases (3+ repeat bad keys) |
 | `taste-report.md` | Human-readable report (generated by `pnpm taste:report`) |
+| `project-rules.md` | Local project rules used by session warmup and final-report guidance |
+| `project-map.json` | Generated project structure map from `repair_project_map` |
+| `edit-receipts.jsonl` | Write/patch receipts with before/after hashes and sanitized args |
+| `shell-receipts.jsonl` | Shell command receipts with exit code, duration, and sanitized output summary |
 
 All secrets, API keys, tokens, and passwords are **redacted** before being written to any file.
 
@@ -111,9 +224,14 @@ pnpm start   # runs in stdio mode
 pnpm build          # Compile TypeScript
 pnpm start          # Run server (stdio mode)
 pnpm dev            # Watch mode
-pnpm taste:report   # Generate .repair-mcp/taste-report.md
-pnpm test:taste     # Run taste harness tests
-pnpm check          # Build + test + report
+pnpm taste:report     # Generate .repair-mcp/taste-report.md
+pnpm test:taste       # Run taste harness MCP tests
+pnpm test:warmup      # Run session warmup tests
+pnpm test:consistency # Run consistency harness tests
+pnpm eval:taste       # Run promptfoo tool-schema eval if available, else local tests
+pnpm eval:claims      # Run promptfoo claim eval if available, else local tests
+pnpm eval:website     # Run promptfoo website/build eval if available, else local tests
+pnpm check            # Build + tests + report
 ```
 
 ---
@@ -214,6 +332,21 @@ taste/
 ├── LICENSE
 └── README.md
 ```
+
+## Agent Session Instructions
+
+At the start of every new coding session in a project using Taste MCP, read the local taste profile before using tools:
+
+- `.repair-mcp/taste-rules.json`
+- `.repair-mcp/taste-stats.json`
+- `.repair-mcp/taste-suggestions.json`
+- `.repair-mcp/taste-report.md` if it exists
+
+Use those files as session context for how tool calls commonly fail in that project and how they should be repaired. Do not read `.repair-mcp/logs.jsonl` by default unless debugging is requested, because it can become large.
+
+If any Taste MCP profile file changes during a session, especially `taste-rules.json`, `taste-suggestions.json`, or `taste-report.md`, reload the changed file before the next major tool operation.
+
+When Taste MCP tools are available, use them for shell commands, file reading, file writing, file patching, and file listing instead of raw shell or filesystem tools. If a tool response includes a `SYSTEM REPAIR HARNESS NOTICE`, follow that notice in the next tool call.
 
 ## Agent Setup Prompts
 

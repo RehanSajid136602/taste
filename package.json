@@ -13,7 +13,12 @@
     "dev": "tsc --watch",
     "taste:report": "node dist/taste-profiler.js",
     "test:taste": "bash test-taste.sh",
-    "check": "pnpm build && pnpm test:taste && pnpm taste:report"
+    "test:warmup": "node dist/test-warmup.js",
+    "test:consistency": "node dist/test-consistency.js",
+    "eval:taste": "node dist/eval-taste.js",
+    "eval:claims": "node dist/eval-claims.js",
+    "eval:website": "node dist/eval-website.js",
+    "check": "pnpm build && pnpm test:taste && pnpm test:warmup && pnpm test:consistency && pnpm taste:report"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0",

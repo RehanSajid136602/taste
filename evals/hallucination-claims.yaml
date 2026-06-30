@@ -1,0 +1,14 @@
+description: Taste MCP hallucination-claim verification evals
+prompts:
+  - "Given receipts, verify whether a final response may claim files changed and build passed."
+providers:
+  - id: echo
+    config:
+      response: "Claims must be checked with repair_verify_claims and repair_build_gate before final reporting."
+tests:
+  - vars: {}
+    assert:
+      - type: contains
+        value: "repair_verify_claims"
+      - type: contains
+        value: "repair_build_gate"

@@ -5,5 +5,7 @@ dist/
 .repair-mcp/*.jsonl
 .repair-mcp/*.json
 .repair-mcp/*.md
+!.repair-mcp/project-rules.md
+.repair-mcp/*.txt
 *.log
 !dist/.gitkeep

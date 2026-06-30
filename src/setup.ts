@@ -77,6 +77,16 @@ const DEFAULT_SUGGESTIONS = {
   suggestedAliases: {},
 };
 
+const DEFAULT_PROJECT_RULES = `# Project Rules
+
+- Do not invent files.
+- Do not claim success without tool evidence.
+- Do not claim build passed without repair_build_gate.
+- Prefer Taste MCP tools over raw tools.
+- If unsure, inspect files before editing.
+- For UI projects, do not leave raw icon names or placeholder text visible.
+`;
+
 export function ensureStartupFiles(): void {
   ensureDir(LOG_DIR);
 
@@ -84,6 +94,9 @@ export function ensureStartupFiles(): void {
   ensureFile(join(LOG_DIR, "taste-stats.json"), JSON.stringify(DEFAULT_TASTE_STATS, null, 2) + "\n");
   ensureFile(join(LOG_DIR, "logs.jsonl"), "");
   ensureFile(join(LOG_DIR, "taste-suggestions.json"), JSON.stringify(DEFAULT_SUGGESTIONS, null, 2) + "\n");
+  ensureFile(join(LOG_DIR, "edit-receipts.jsonl"), "");
+  ensureFile(join(LOG_DIR, "shell-receipts.jsonl"), "");
+  ensureFile(join(LOG_DIR, "project-rules.md"), DEFAULT_PROJECT_RULES);
 
   // Ensure existing files have updated keys
   const rulesPath = join(LOG_DIR, "taste-rules.json");

@@ -30,6 +30,16 @@ export const listFilesSchema = z.object({
   excludePatterns: z.array(z.string()).optional(),
 });
 
+export const emptySchema = z.object({});
+
+export const verifyClaimsSchema = z.object({
+  claims: z.array(z.string()),
+});
+
+export const finalReportGateSchema = z.object({
+  claims: z.array(z.string()).optional(),
+});
+
 export function zodToJsonSchema(schema: z.ZodObject<z.ZodRawShape>): Record<string, unknown> {
   const shape = schema.shape;
   const properties: Record<string, unknown> = {};

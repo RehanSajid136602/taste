@@ -1,0 +1,14 @@
+description: Taste MCP website build truth-gate evals
+prompts:
+  - "For a UI project, inspect files, run the build, and only claim success if the build gate confirms it."
+providers:
+  - id: echo
+    config:
+      response: "Run build/lint/typecheck through repair_shell and confirm with repair_build_gate before claiming success."
+tests:
+  - vars: {}
+    assert:
+      - type: contains
+        value: "repair_shell"
+      - type: contains
+        value: "repair_build_gate"

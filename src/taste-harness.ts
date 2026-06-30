@@ -88,6 +88,11 @@ function buildNotice(toolName: string, repairs: string[], repairTypes: string[])
     repair_write_file: `{ filePath: string, content: string }`,
     repair_patch_file: `{ filePath: string, oldValue: string, newValue: string, replaceAll?: boolean }`,
     repair_list_files: `{ filePath: string, pattern?: string, excludePatterns?: string[] }`,
+    repair_session_warmup: `{}`,
+    repair_project_map: `{}`,
+    repair_build_gate: `{}`,
+    repair_verify_claims: `{ claims: string[] }`,
+    repair_final_report_gate: `{ claims?: string[] }`,
   };
   if (schemaHints[toolName]) {
     lines.push(`  ${schemaHints[toolName]}`);
@@ -145,7 +150,8 @@ export async function withTasteHarness(opts: WithTasteHarnessOpts): Promise<Call
   }
 
   // 4. Remove nulls and empties
-  const cleaned = removeNullsAndEmpties(current) as Record<string, unknown>;
+  const cleanedValue = removeNullsAndEmpties(current);
+  const cleaned = isPlainObject(cleanedValue) ? cleanedValue : {};
   for (const [k, v] of Object.entries(current)) {
     if (v !== cleaned[k]) {
       if (v === null) {
